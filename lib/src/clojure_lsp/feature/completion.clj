@@ -91,14 +91,12 @@
 (defn ^:private var-defs-in-ns-named [analysis ns-str name-syms]
   (let [ns (symbol ns-str)
         name-set (set name-syms)]
-    (into []
-          (comp (mapcat val)
-                (filter #(= ns (:ns %)))
-                ;; clojure.core is 98% var-definitions, so faster to filter by
-                ;; name-set before filtering for var defs.
-                (filter #(contains? name-set (:name %)))
-                (q/xf-var-defs false))
-          analysis)))
+    (q/find-all analysis
+                (comp (filter #(= ns (:ns %)))
+                      ;; clojure.core is 98% var-definitions, so faster to filter by
+                      ;; name-set before filtering for var defs.
+                      (filter #(contains? name-set (:name %)))
+                      (q/xf-var-defs false)))))
 
 (defn ^:private element->label [{:keys [alias bucket] :as element} cursor-alias priority]
   (cond

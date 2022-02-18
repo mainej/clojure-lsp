@@ -412,6 +412,17 @@
     (catch Throwable e
       (log/error e "can't find references"))))
 
+(defn find-in-file
+  ([analysis filename xform]
+   (find-in-file analysis filename xform {}))
+  ([analysis filename xform {:keys [to] :or {to []}}]
+   (into to xform (get analysis filename))))
+
+(defn find-all
+  ([analysis xform] (find-all analysis xform {}))
+  ([analysis xform {:keys [to] :or {to []}}]
+   (into to (comp (mapcat val) xform) analysis)))
+
 (defn xf-var-defs [include-private?]
   (comp
     (filter #(and (identical? :var-definitions (:bucket %))
@@ -425,33 +436,22 @@
                       (string/starts-with? (str (:name %)) "->"))))))
 
 (defn find-var-definitions [analysis filename include-private?]
-  (into []
-        (xf-var-defs include-private?)
-        (get analysis filename)))
+  (find-in-file analysis filename (xf-var-defs include-private?)))
 
 (defn find-all-var-definitions [analysis]
-  (into []
-        (comp
-          (mapcat val)
-          (xf-var-defs false))
-        analysis))
+  (find-all analysis (xf-var-defs false)))
+
+(def ^:private xf-keyword-definitions
+  (comp
+    (filter #(and (identical? :keywords (:bucket %))
+                  (:reg %)))
+    (medley/distinct-by (juxt :ns :name :row :col))))
 
 (defn find-keyword-definitions [analysis filename]
-  (into []
-        (comp
-          (filter #(and (identical? :keywords (:bucket %))
-                        (:reg %)))
-          (medley/distinct-by (juxt :ns :name :row :col)))
-        (get analysis filename)))
+  (find-in-file analysis filename xf-keyword-definitions))
 
 (defn find-all-keyword-definitions [analysis]
-  (into []
-        (comp
-          (mapcat val)
-          (filter #(and (identical? :keywords (:bucket %))
-                        (:reg %)))
-          (medley/distinct-by (juxt :ns :name :row :col)))
-        analysis))
+  (find-all analysis xf-keyword-definitions))
 
 (defn find-local-by-destructured-keyword [analysis filename keyword-element]
   (->> (get analysis filename)
