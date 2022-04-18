@@ -66,7 +66,7 @@
 
   (apply require namespaces)
 
-  (let [test-results (timeout 600000
+  (let [test-results (timeout 300000
                               #(with-log-tail-report
                                  (apply t/run-tests namespaces)))]
 

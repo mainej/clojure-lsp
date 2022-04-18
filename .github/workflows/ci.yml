@@ -95,7 +95,6 @@ jobs:
         run: make prod-cli
 
       - name: Run integration tests
-        timeout-minutes: 5
         run: make integration-test
 
       - name: Run babashka pod tests
