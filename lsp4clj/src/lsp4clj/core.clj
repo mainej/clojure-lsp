@@ -326,14 +326,15 @@
       (try
         (let [buffer (byte-array buffer-size)]
           (loop [chs (.read system-in buffer 0 buffer-size)]
-            (if (pos? chs)
-              (do
-                (logger/warn server-logger-tag (str "FROM STDIN" chs (String. (java.util.Arrays/copyOfRange buffer 0 chs))))
-                (.write os buffer 0 chs)
-                (recur (.read system-in buffer 0 buffer-size)))
-              (.close os))))
+            (when (pos? chs)
+              (logger/warn server-logger-tag (str "FROM STDIN" chs (String. (java.util.Arrays/copyOfRange buffer 0 chs))))
+              (.write os buffer 0 chs)
+              (recur (.read system-in buffer 0 buffer-size)))))
         (catch Exception e
-          (logger/warn e server-logger-tag "in thread"))))
+          (logger/warn e server-logger-tag "in thread"))
+        (finally
+          (.close is)
+          (.close os))))
     is))
 
 (defn tee-system-out [^java.io.OutputStream system-out]
@@ -344,14 +345,15 @@
       (try
         (let [buffer (byte-array buffer-size)]
           (loop [chs (.read is buffer 0 buffer-size)]
-            (if (pos? chs)
-              (do
-                (logger/warn server-logger-tag (str  "FROM STDOUT" chs (String. (java.util.Arrays/copyOfRange buffer 0 chs))))
-                (.write system-out buffer)
-                (recur (.read is buffer 0 buffer-size)))
-              (.close is))))
+            (when (pos? chs)
+              (logger/warn server-logger-tag (str "TO STDOUT" chs (String. (java.util.Arrays/copyOfRange buffer 0 chs))))
+              (.write system-out buffer)
+              (recur (.read is buffer 0 buffer-size)))))
         (catch Exception e
-          (logger/error e server-logger-tag "in thread"))))
+          (logger/error e server-logger-tag "in thread"))
+        (finally
+          (.close os)
+          (.close is))))
     os))
 
 (defrecord LSPProducer [^LanguageClient client db]
