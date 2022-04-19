@@ -333,7 +333,7 @@
         (let [buffer (byte-array buffer-size)]
           (loop [chs (.read system-in buffer 0 buffer-size)]
             (when (pos? chs)
-              (logger/warn server-logger-tag (str "(reading FROM STDIN" chs (String. (java.util.Arrays/copyOfRange buffer 0 chs))))
+              (logger/warn server-logger-tag (str "(reading FROM STDIN\n" (String. (java.util.Arrays/copyOfRange buffer 0 chs))))
               (.write os buffer 0 chs)
               (logger/warn server-logger-tag "forwarded to server)")
               (recur (.read system-in buffer 0 buffer-size)))))
@@ -359,7 +359,7 @@
         (let [buffer (byte-array buffer-size)]
           (loop [chs (.read is buffer 0 buffer-size)]
             (when (pos? chs)
-              (logger/warn server-logger-tag (str "(writing TO STDOUT" chs (String. (java.util.Arrays/copyOfRange buffer 0 chs))))
+              (logger/warn server-logger-tag (str "(writing TO STDOUT\n" (String. (java.util.Arrays/copyOfRange buffer 0 chs))))
               (.write system-out buffer)
               (logger/warn server-logger-tag "written to stdout)")
               (recur (.read is buffer 0 buffer-size)))))
