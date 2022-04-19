@@ -332,11 +332,17 @@
       (try
         (let [buffer (byte-array buffer-size)]
           (loop [chs (.read system-in buffer 0 buffer-size)]
-            (when (pos? chs)
-              (logger/warn server-logger-tag (str "(reading FROM STDIN\n" (String. (java.util.Arrays/copyOfRange buffer 0 chs))))
-              (.write os buffer 0 chs)
-              (logger/warn server-logger-tag "forwarded to server)")
-              (recur (.read system-in buffer 0 buffer-size)))))
+            (cond
+              (pos? chs)
+              (do
+                (logger/warn server-logger-tag (str "(reading FROM STDIN\n" (String. (java.util.Arrays/copyOfRange buffer 0 chs))))
+                (.write os buffer 0 chs)
+                (logger/warn server-logger-tag "forwarded to server)")
+                (recur (.read system-in buffer 0 buffer-size)))
+              (zero? chs)
+              (recur (.read system-in buffer 0 buffer-size))
+              ;; negative chars. system-in has closed. exit gracefully
+              )))
         (catch Exception e
           (logger/warn e server-logger-tag "in thread"))
         (finally
@@ -358,11 +364,17 @@
       (try
         (let [buffer (byte-array buffer-size)]
           (loop [chs (.read is buffer 0 buffer-size)]
-            (when (pos? chs)
-              (logger/warn server-logger-tag (str "(writing TO STDOUT\n" (String. (java.util.Arrays/copyOfRange buffer 0 chs))))
-              (.write system-out buffer)
-              (logger/warn server-logger-tag "written to stdout)")
-              (recur (.read is buffer 0 buffer-size)))))
+            (cond
+              (pos? chs)
+              (do
+                (logger/warn server-logger-tag (str "(writing TO STDOUT\n" (String. (java.util.Arrays/copyOfRange buffer 0 chs))))
+                (.write system-out buffer)
+                (logger/warn server-logger-tag "written to stdout)")
+                (recur (.read is buffer 0 buffer-size)))
+              (zero? chs)
+              (recur (.read is buffer 0 buffer-size))
+              ;; negative chars. is has closed. exit gracefully
+              )))
         (catch Exception e
           (logger/error e server-logger-tag "in thread"))
         (finally
