@@ -194,59 +194,52 @@
 (defonce ^:private components* (atom {}))
 
 (defn run-server! []
-  (let [is (lsp/tee-system-in System/in)
-        os (lsp/tee-system-out System/out)]
-    (try
-      (let [producer* (atom nil)
-            db db/db
-            timbre-logger (doto (->TimbreLogger db)
-                            (logger/setup))
-            _ (logger/info lsp/server-logger-tag "Starting server...")
+  (let [producer* (atom nil)
+        db db/db
+        timbre-logger (doto (->TimbreLogger db)
+                        (logger/setup))
+        _ (logger/info lsp/server-logger-tag "Starting server...")
+        is (lsp/tee-system-in System/in)
+        os (lsp/tee-system-out System/out)
 
-            _ (reset! components* (components/->components db timbre-logger nil))
-            clojure-feature-handler (handlers/->ClojureLSPFeatureHandler components*)
-            server (ClojureLspServer. (LSPServer. clojure-feature-handler
-                                                  producer*
-                                                  db
-                                                  db/initial-db
-                                                  capabilites
-                                                  client-settings
-                                                  "**/*.{clj,cljs,cljc,edn}")
-                                      clojure-feature-handler)
-            launcher (Launcher/createLauncher server ClojureLanguageClient is os)
-            language-client ^ClojureLanguageClient (.getRemoteProxy launcher)
-            producer (->ClojureLspProducer language-client
-                                           (lsp/->LSPProducer language-client db)
-                                           db)
-            debounced-diags (shared/debounce-by db/diagnostics-chan diagnostics-debounce-ms :uri)
-            debounced-changes (shared/debounce-by db/current-changes-chan change-debounce-ms :uri)
-            debounced-created-watched-files (shared/debounce-all db/created-watched-files-chan created-watched-files-debounce-ms)]
-        ;; TODO remove atom, think in a way to build all components in the same place and not need to assoc to atom later.
-        (reset! producer* producer)
-        (swap! components* assoc :producer producer)
-        (nrepl/setup-nrepl db)
-        (go-loop [edit (<! db/edits-chan)]
-          (producer/publish-workspace-edit producer edit)
-          (recur (<! db/edits-chan)))
-        (go-loop []
-          (producer/publish-diagnostic producer (<! debounced-diags))
-          (recur))
-        (go-loop []
-          (try
-            (f.file-management/analyze-changes (<! debounced-changes) @components*)
-            (catch Exception e
-              (logger/error e "Error during analyzing buffer file changes")))
-          (recur))
-        (go-loop []
-          (try
-            (f.file-management/analyze-watched-created-files! (<! debounced-created-watched-files) @components*)
-            (catch Exception e
-              (logger/error e "Error during analyzing created watched files")))
-          (recur))
-        (.startListening launcher))
-      (catch Throwable e
-        (logger/error e "within clojure-lsp.server/run-server!")
-        (throw e))
-      (finally
-        (.close is)
-        (.close os)))))
+        _ (reset! components* (components/->components db timbre-logger nil))
+        clojure-feature-handler (handlers/->ClojureLSPFeatureHandler components*)
+        server (ClojureLspServer. (LSPServer. clojure-feature-handler
+                                              producer*
+                                              db
+                                              db/initial-db
+                                              capabilites
+                                              client-settings
+                                              "**/*.{clj,cljs,cljc,edn}")
+                                  clojure-feature-handler)
+        launcher (Launcher/createLauncher server ClojureLanguageClient is os)
+        language-client ^ClojureLanguageClient (.getRemoteProxy launcher)
+        producer (->ClojureLspProducer language-client
+                                       (lsp/->LSPProducer language-client db)
+                                       db)
+        debounced-diags (shared/debounce-by db/diagnostics-chan diagnostics-debounce-ms :uri)
+        debounced-changes (shared/debounce-by db/current-changes-chan change-debounce-ms :uri)
+        debounced-created-watched-files (shared/debounce-all db/created-watched-files-chan created-watched-files-debounce-ms)]
+    ;; TODO remove atom, think in a way to build all components in the same place and not need to assoc to atom later.
+    (reset! producer* producer)
+    (swap! components* assoc :producer producer)
+    (nrepl/setup-nrepl db)
+    (go-loop [edit (<! db/edits-chan)]
+      (producer/publish-workspace-edit producer edit)
+      (recur (<! db/edits-chan)))
+    (go-loop []
+      (producer/publish-diagnostic producer (<! debounced-diags))
+      (recur))
+    (go-loop []
+      (try
+        (f.file-management/analyze-changes (<! debounced-changes) @components*)
+        (catch Exception e
+          (logger/error e "Error during analyzing buffer file changes")))
+      (recur))
+    (go-loop []
+      (try
+        (f.file-management/analyze-watched-created-files! (<! debounced-created-watched-files) @components*)
+        (catch Exception e
+          (logger/error e "Error during analyzing created watched files")))
+      (recur))
+    (.startListening launcher)))
