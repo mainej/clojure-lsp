@@ -82,7 +82,7 @@
   (bin {:jvm-opts ["-Djdk.attach.allowAttachSelf=true"]}))
 
 (defn prod-cli [opts]
-  (prod-jar opts)
+  (prod-jar (merge opts {:extra-aliases [:log]}))
   (bin {}))
 
 (defn native-cli [opts]
