@@ -1,7 +1,8 @@
 (ns entrypoint
   (:require
    [clojure.test :as t]
-   [clojure.java.shell :as sh]))
+   [clojure.java.shell :as sh]
+   [medley.core :as medley]))
 
 (def namespaces
   '[
@@ -38,11 +39,14 @@
 (defn log-tail []
   (:out (sh/sh "tail" "-n" "300" "clojure-lsp.integration-test.out" :dir "integration-test/sample-test/")))
 
+(def first-print-log-tail?* (atom true))
+
 (defn print-log-tail! []
-  (binding [*out* *err*]
-    (println "--- RECENT LOG OUTPUT ---")
-    (print (log-tail))
-    (println "--- END RECENT LOG OUTPUT ---")))
+  (when (medley/deref-reset! first-print-log-tail?* false)
+    (binding [*out* *err*]
+      (println "--- RECENT LOG OUTPUT ---")
+      (print (log-tail))
+      (println "--- END RECENT LOG OUTPUT ---"))))
 
 (declare ^:dynamic original-report)
 
