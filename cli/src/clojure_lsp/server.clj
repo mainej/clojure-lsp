@@ -14,6 +14,7 @@
    [clojure-lsp.shared :as shared]
    [clojure.core.async :refer [<! go go-loop]]
    [clojure.java.data :as j]
+   [clojure.java.io :as io]
    [lsp4clj.coercer :as coercer]
    [lsp4clj.components :as components]
    [lsp4clj.core :as lsp]
@@ -199,8 +200,8 @@
         timbre-logger (doto (->TimbreLogger db)
                         (logger/setup))
         _ (logger/info lsp/server-logger-tag "Starting server...")
-        is (lsp/tee-system-in System/in)
-        os (lsp/tee-system-out System/out)
+        is (io/input-stream (lsp/tee-system-in System/in))
+        os (io/input-stream (lsp/tee-system-out System/out))
 
         _ (reset! components* (components/->components db timbre-logger nil))
         clojure-feature-handler (handlers/->ClojureLSPFeatureHandler components*)
