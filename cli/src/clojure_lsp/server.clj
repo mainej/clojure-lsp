@@ -242,4 +242,4 @@
         (catch Exception e
           (logger/error e "Error during analyzing created watched files")))
       (recur))
-    (deref (.startListening launcher))))
+    (.startListening launcher)))
