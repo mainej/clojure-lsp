@@ -14,7 +14,6 @@
    [clojure-lsp.shared :as shared]
    [clojure.core.async :refer [<! go go-loop]]
    [clojure.java.data :as j]
-   [clojure.java.io :as io]
    [lsp4clj.coercer :as coercer]
    [lsp4clj.components :as components]
    [lsp4clj.core :as lsp]
