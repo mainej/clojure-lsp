@@ -115,6 +115,8 @@
     (future-cancel *clojure-lsp-listener*)
     (alter-var-root #'*clojure-lsp-listener* (constantly nil)))
   (when *clojure-lsp-process*
+    #_(.close *server-out*)
+    (.close *server-in*)
     (p/destroy *clojure-lsp-process*)
     (alter-var-root #'*clojure-lsp-process* (constantly nil))))
 
