@@ -1,7 +1,7 @@
 (ns lsp4clj.core
   (:require
    [clojure-lsp.shared :as shared]
-   [clojure.core.async :refer [<! go-loop thread timeout]]
+   [clojure.core.async :refer [<! go-loop timeout]]
    [clojure.java.shell :as shell]
    [clojure.string :as string]
    [lsp4clj.coercer :as coercer]
@@ -328,7 +328,7 @@
   (let [buffer-size 1024
         os (java.io.PipedOutputStream.)
         is (java.io.PipedInputStream.)]
-    (thread
+    (future
       (try
         (.connect is os)
         (let [buffer (byte-array buffer-size)]
@@ -345,9 +345,6 @@
                 (recur)
                 ;; negative chars. system-in has closed. exit gracefully
                 ))))
-        (catch Exception e
-          (logger/warn e server-logger-tag "in thread")
-          (throw e))
         (finally
           (.close is)
           (.close os))))
@@ -363,7 +360,7 @@
   (let [buffer-size 1024
         is (java.io.PipedInputStream.)
         os (java.io.PipedOutputStream.)]
-    (thread
+    (future
       (try
         (.connect is os)
         (let [buffer (byte-array buffer-size)]
@@ -380,9 +377,6 @@
                 (recur)
                 ;; negative chars. is has closed. exit gracefully
                 ))))
-        (catch Exception e
-          (logger/error e server-logger-tag "in thread")
-          (throw e))
         (finally
           (.close os)
           (.close is))))
