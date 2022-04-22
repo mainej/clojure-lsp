@@ -138,7 +138,11 @@
 
   (^void serverInfoLog [_]
     (future
-      (clojure-feature/server-info-log feature-handler))
+      (try
+        (clojure-feature/server-info-log feature-handler)
+        (catch Throwable e
+          (logger/error e)
+          (throw e))))
     nil)
 
   (^CompletableFuture cursorInfoRaw [_ ^CursorInfoParams params]
@@ -147,7 +151,11 @@
 
   (^void cursorInfoLog [_ ^CursorInfoParams params]
     (future
-      (lsp/handle-notification params clojure-feature/cursor-info-log feature-handler)))
+      (try
+        (lsp/handle-notification params clojure-feature/cursor-info-log feature-handler)
+        (catch Throwable e
+          (logger/error e)
+          (throw e)))))
 
   (^CompletableFuture clojuredocsRaw [_ ^ClojuredocsParams params]
     (CompletableFuture/completedFuture

@@ -6,6 +6,7 @@
    [clojure-lsp.shared :as shared]
    [clojure.set :as set]
    [clojure.string :as string]
+   [lsp4clj.protocols.logger :as logger]
    [rewrite-clj.node :as n]
    [rewrite-clj.zip :as z]
    [rewrite-clj.zip.subedit :as zsub]))
@@ -345,6 +346,14 @@
         ns-loc))
     ns-loc))
 
+(defmacro my-future [& body]
+  `(future-call (^{:once true} fn* []
+                                   (try
+                                     ~@body
+                                     (catch Throwable e#
+                                       (logger/error e#)
+                                       (throw e#))))))
+
 (defn clean-ns-edits
   [zloc uri db]
   (let [settings (settings/all db)
@@ -356,10 +365,10 @@
     (when ns-loc
       (let [ns-inner-blocks-indentation (resolve-ns-inner-blocks-identation db)
             filename (shared/uri->filename uri)
-            unused-aliases* (future (q/find-unused-aliases analysis findings filename))
-            unused-refers* (future (q/find-unused-refers analysis findings filename))
-            unused-imports* (future (q/find-unused-imports analysis findings filename))
-            duplicate-requires* (future (q/find-duplicate-requires findings filename))
+            unused-aliases* (my-future (q/find-unused-aliases analysis findings filename))
+            unused-refers* (my-future (q/find-unused-refers analysis findings filename))
+            unused-imports* (my-future (q/find-unused-imports analysis findings filename))
+            duplicate-requires* (my-future (q/find-duplicate-requires findings filename))
             clean-ctx {:db db
                        :filename filename
                        :unused-aliases @unused-aliases*

@@ -10,6 +10,7 @@
    [clojure-lsp.refactor.transform :as r.transform]
    [clojure-lsp.shared :as shared]
    [clojure.string :as string]
+   [lsp4clj.protocols.logger :as logger]
    [medley.core :as medley]
    [rewrite-clj.zip :as z]))
 
@@ -242,30 +243,38 @@
              :command   "resolve-macro-as"
              :arguments [uri row col]}})
 
+(defmacro my-future [& body]
+  `(future-call (^{:once true} fn* []
+                                   (try
+                                     ~@body
+                                     (catch Throwable e#
+                                       (logger/error e#)
+                                       (throw e#))))))
+
 (defn all [root-zloc uri row col diagnostics client-capabilities db]
   (let [zloc (parser/to-pos root-zloc row col)
         line (dec row)
         character (dec col)
         resolvable-diagnostics (resolvable-diagnostics diagnostics root-zloc)
         workspace-edit-capability? (get-in client-capabilities [:workspace :workspace-edit])
-        inside-function?* (future (r.transform/find-function-form zloc))
-        private-function-to-create* (future (find-private-function-to-create resolvable-diagnostics))
-        public-function-to-create* (future (find-public-function-to-create uri resolvable-diagnostics db))
-        other-colls* (future (r.transform/find-other-colls zloc))
-        can-thread?* (future (r.transform/can-thread? zloc))
-        can-unwind-thread?* (future (r.transform/can-unwind-thread? zloc))
-        can-create-test?* (future (r.transform/can-create-test? zloc uri db))
-        macro-sym* (future (f.resolve-macro/find-full-macro-symbol-to-resolve zloc uri db))
+        inside-function?* (my-future (r.transform/find-function-form zloc))
+        private-function-to-create* (my-future (find-private-function-to-create resolvable-diagnostics))
+        public-function-to-create* (my-future (find-public-function-to-create uri resolvable-diagnostics db))
+        other-colls* (my-future (r.transform/find-other-colls zloc))
+        can-thread?* (my-future (r.transform/can-thread? zloc))
+        can-unwind-thread?* (my-future (r.transform/can-unwind-thread? zloc))
+        can-create-test?* (my-future (r.transform/can-create-test? zloc uri db))
+        macro-sym* (my-future (f.resolve-macro/find-full-macro-symbol-to-resolve zloc uri db))
         resolvable-require-diagnostics (diagnostics-with-code #{"unresolved-namespace" "unresolved-symbol"} resolvable-diagnostics)
-        missing-requires* (future (find-missing-requires resolvable-require-diagnostics db))
-        missing-imports* (future (find-missing-imports resolvable-require-diagnostics))
-        require-suggestions* (future (find-all-require-suggestions resolvable-require-diagnostics @missing-requires* uri db))
-        allow-sort-map?* (future (f.sort-map/sortable-map-zloc zloc))
-        allow-move-entry-up?* (future (f.move-coll-entry/can-move-entry-up? zloc uri db))
-        allow-move-entry-down?* (future (f.move-coll-entry/can-move-entry-down? zloc uri db))
-        can-cycle-fn-literal?* (future (r.transform/can-cycle-fn-literal? zloc))
+        missing-requires* (my-future (find-missing-requires resolvable-require-diagnostics db))
+        missing-imports* (my-future (find-missing-imports resolvable-require-diagnostics))
+        require-suggestions* (my-future (find-all-require-suggestions resolvable-require-diagnostics @missing-requires* uri db))
+        allow-sort-map?* (my-future (f.sort-map/sortable-map-zloc zloc))
+        allow-move-entry-up?* (my-future (f.move-coll-entry/can-move-entry-up? zloc uri db))
+        allow-move-entry-down?* (my-future (f.move-coll-entry/can-move-entry-down? zloc uri db))
+        can-cycle-fn-literal?* (my-future (r.transform/can-cycle-fn-literal? zloc))
         definition (q/find-definition-from-cursor (:analysis @db) (shared/uri->filename uri) row col db)
-        inline-symbol?* (future (r.transform/inline-symbol? definition db))
+        inline-symbol?* (my-future (r.transform/inline-symbol? definition db))
         can-add-let? (or (z/skip-whitespace z/right zloc)
                          (when-not (edit/top? zloc) (z/skip-whitespace z/up zloc)))]
     (cond-> []

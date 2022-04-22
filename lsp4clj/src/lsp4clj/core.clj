@@ -103,7 +103,11 @@
 
   (^void didSave [_ ^DidSaveTextDocumentParams params]
     (future
-      (handle-notification params feature-handler/did-save handler))
+      (try
+        (handle-notification params feature-handler/did-save handler)
+        (catch Throwable e
+          (logger/error e)
+          (throw e))))
     (CompletableFuture/completedFuture 0))
 
   (^void didClose [_ ^DidCloseTextDocumentParams params]
@@ -213,7 +217,11 @@
   WorkspaceService
   (^CompletableFuture executeCommand [_ ^ExecuteCommandParams params]
     (future
-      (handle-notification params feature-handler/execute-command handler))
+      (try
+        (handle-notification params feature-handler/execute-command handler)
+        (catch Throwable e
+          (logger/error e)
+          (throw e))))
     (CompletableFuture/completedFuture 0))
 
   (^void didChangeConfiguration [_ ^DidChangeConfigurationParams params]
@@ -345,7 +353,7 @@
                 (recur)
                 ;; negative chars. system-in has closed. exit gracefully
                 ))))
-        (catch Exception e
+        (catch Throwable e
           (logger/warn e server-logger-tag "in thread")
           (throw e))
         (finally
@@ -380,7 +388,7 @@
                 (recur)
                 ;; negative chars. is has closed. exit gracefully
                 ))))
-        (catch Exception e
+        (catch Throwable e
           (logger/error e server-logger-tag "in thread")
           (throw e))
         (finally

@@ -30,7 +30,12 @@
     ])
 
 (defn timeout [timeout-ms callback]
-  (let [fut (future (callback))
+  (let [fut (future
+              (try
+                (callback)
+                (catch Throwable e
+                  (println e)
+                  (throw e))))
         ret (deref fut timeout-ms :timed-out)]
     (when (= ret :timed-out)
       (future-cancel fut))
