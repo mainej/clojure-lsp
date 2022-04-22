@@ -36,17 +36,21 @@
       (future-cancel fut))
     ret))
 
-(defn log-tail []
-  (:out (sh/sh "tail" "-n" "300" "clojure-lsp.integration-test.out" :dir "integration-test/sample-test/")))
+(defn log-tail [file lines]
+  (:out (sh/sh "tail" "-n" (str lines) file :dir "integration-test/sample-test/")))
 
 (def first-print-log-tail?* (atom true))
 
 (defn print-log-tail! []
   (when (medley/deref-reset! first-print-log-tail?* false)
     (binding [*out* *err*]
+      (println "--- LSP TRACE ---")
+      (print (log-tail "clojure-lsp.lsp-trace.out" 1000))
+      (println "--- END LSP TRACE ---")
       (println "--- RECENT LOG OUTPUT ---")
-      (print (log-tail))
-      (println "--- END RECENT LOG OUTPUT ---"))))
+      (print (log-tail "clojure-lsp.integration-test.out" 300))
+      (println "--- END RECENT LOG OUTPUT ---")
+      )))
 
 (declare ^:dynamic original-report)
 
