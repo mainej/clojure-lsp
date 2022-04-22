@@ -6,27 +6,27 @@
 
 (def namespaces
   '[
-    integration.initialize-test
-    integration.definition-test
-    integration.declaration-test
-    integration.implementation-test
+    ; integration.initialize-test
+    ; integration.definition-test
+    ; integration.declaration-test
+    ; integration.implementation-test
     integration.code-action-test
-    integration.completion-test
-    integration.diagnostics-test
-    integration.settings-change-test
-    integration.formatting-test
-    integration.rename-test
-    integration.document-highlight-test
-    integration.document-symbol-test
-    integration.linked-editing-range-test
-    integration.cursor-info-test
-    integration.java-interop-test
-    integration.stubs-test
-    integration.api.version-test
-    integration.api.clean-ns-test
-    integration.api.diagnostics-test
-    integration.api.format-test
-    integration.api.rename-test
+    ; integration.completion-test
+    ; integration.diagnostics-test
+    ; integration.settings-change-test
+    ; integration.formatting-test
+    ; integration.rename-test
+    ; integration.document-highlight-test
+    ; integration.document-symbol-test
+    ; integration.linked-editing-range-test
+    ; integration.cursor-info-test
+    ; integration.java-interop-test
+    ; integration.stubs-test
+    ; integration.api.version-test
+    ; integration.api.clean-ns-test
+    ; integration.api.diagnostics-test
+    ; integration.api.format-test
+    ; integration.api.rename-test
     ])
 
 (defn timeout [timeout-ms callback]
@@ -79,7 +79,7 @@
 
   (apply require namespaces)
 
-  (let [test-results (timeout (* 7 60 1000)
+  (let [test-results (timeout (* 1 60 1000)
                               #(with-log-tail-report
                                  (apply t/run-tests namespaces)))]
 
