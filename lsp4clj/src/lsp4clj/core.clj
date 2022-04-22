@@ -345,8 +345,11 @@
                 (recur)
                 ;; negative chars. system-in has closed. exit gracefully
                 ))))
+        (catch Exception e
+          (logger/warn e server-logger-tag "in thread")
+          (throw e))
         (finally
-          (.close is)
+          #_(.close is)
           (.close os))))
     is))
 
@@ -377,8 +380,11 @@
                 (recur)
                 ;; negative chars. is has closed. exit gracefully
                 ))))
+        (catch Exception e
+          (logger/error e server-logger-tag "in thread")
+          (throw e))
         (finally
-          (.close os)
+          #_(.close os)
           (.close is))))
     os))
 
