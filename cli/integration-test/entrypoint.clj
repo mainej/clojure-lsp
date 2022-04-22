@@ -6,7 +6,7 @@
 
 (def namespaces
   '[
-    ; integration.initialize-test
+    integration.initialize-test
     ; integration.definition-test
     ; integration.declaration-test
     ; integration.implementation-test
@@ -79,7 +79,7 @@
 
   (apply require namespaces)
 
-  (let [test-results (timeout (* 1 60 1000)
+  (let [test-results (timeout (* 2 60 1000)
                               #(with-log-tail-report
                                  (apply t/run-tests namespaces)))]
 
