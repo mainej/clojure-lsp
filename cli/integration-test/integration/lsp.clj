@@ -135,8 +135,10 @@
   (client-log :blue "sending notification:" params)
   (client-send params))
 
+;; TODO: rename
 (defn request! [params]
   (client-log :cyan "sending request:" params)
+  ;; TODO: use id from params, not @client-request-id, to make less racy
   (client-send params)
   (loop [response (get @server-responses @client-request-id)]
     (if response
@@ -159,6 +161,7 @@
                                         @server-notifications))]
         (if notification
           (do
+            ;; TODO: use id from notification, not method-str, to make less racy
             (swap! server-notifications
                    (fn [n]
                      (->> n
@@ -175,6 +178,7 @@
           notification (first (filter #(= method-str (:method %)) @server-notifications))]
       (if notification
         (do
+            ;; TODO: use id from notification, not method-str, to make less racy
           (swap! server-notifications
                  (fn [n]
                    (->> n
@@ -185,12 +189,14 @@
           (Thread/sleep 500)
           (recur))))))
 
+;; TODO: rename
 (defn await-client-request [method]
   (loop []
     (let [method-str (keyname method)
           msg        (first (filter #(= method-str (:method %)) @server-requests))]
       (if msg
         (do
+            ;; TODO: use id from msg, not method-str, to make less racy
           (swap! server-requests
                  (fn [n]
                    (->> n
