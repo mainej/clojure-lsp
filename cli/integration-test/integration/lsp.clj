@@ -12,11 +12,15 @@
   ([binary]
    (start-server binary []))
   ([binary args]
-   (p/process (into [(.getCanonicalPath (io/file binary))] args)
-              {:dir "integration-test/sample-test/"})))
+   (let [pb (p/pb (into [(.getCanonicalPath (io/file binary))] args)
+                  {:dir "integration-test/sample-test/"})]
+     (.redirectErrorStream (:pb pb))
+     (p/start pb))))
 
 (defn start-process! []
   (let [server (start-server (first *command-line-args*))
+        _ (prn :in (:in server))
+        _ (prn :out (:out server))
         client (client/client (io/writer (:in server)) (io/reader (:out server)))]
     (client/start client)
     (alter-var-root #'*clojure-lsp-process* (constantly server))

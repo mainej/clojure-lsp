@@ -239,9 +239,9 @@
     (reset! producer* producer)
     (swap! components* assoc :producer producer)
     (nrepl/setup-nrepl db*)
-    (go-loop [edit (<! db/edits-chan)]
-      (producer/publish-workspace-edit producer edit)
-      (recur (<! db/edits-chan)))
+    (go-loop []
+      (producer/publish-workspace-edit producer (<! db/edits-chan))
+      (recur))
     (go-loop []
       (producer/publish-diagnostic producer (<! debounced-diags))
       (recur))
